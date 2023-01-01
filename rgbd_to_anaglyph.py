@@ -66,7 +66,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("-cx","--centre-x",type=float,default=319.5,help="cx")
     arg_parser.add_argument("-cy","--centre-y",type=str,default=239.5,help="cy")
     arg_parser.add_argument("-opt","--optimize",default=False,action="store_true", help="Optimize")
-    arg_parser.add_argument("-fl","--flags",default="a", help="Type of 3d visualization. a - anaglyph, s - side by side, c - cross eyed, l - left view, r - right - view. Combine to show more visualizations together. For example asc - show anaglyph, side by side and cross eyed")
+    arg_parser.add_argument("-fl","--flags",default="a", help="Type of 3d visualization. a - anaglyph, s - side by side, c - cross eye, l - left view, r - right - view. Combine to show more visualizations together. For example asc - show anaglyph, side by side and cross eye")
 
     args = arg_parser.parse_args()
     if not args.input_image or not args.depth_image:
@@ -108,9 +108,9 @@ if __name__ == "__main__":
     if "s" in flags:
         cv2.imshow("Side By Side", img_sbs)
     if "c" in flags:
-        cv2.namedWindow("Cross Eyed", cv2.WINDOW_NORMAL)
+        cv2.namedWindow("Cross Eye", cv2.WINDOW_NORMAL)
         img_cross = np.concatenate([img_right, img_left], axis=1)
-        cv2.imshow("Cross Eyed",img_cross[:,:,::-1])
+        cv2.imshow("Cross Eye",img_cross[:,:,::-1])
     img_left[:,:,1:] = 0
     img_right[:,:,0] = 0
     img_3d = img_left + img_right
