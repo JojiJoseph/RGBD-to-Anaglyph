@@ -99,6 +99,8 @@ if __name__ == "__main__":
     img_left = img_left.copy()
     cv2.imshow("Left image", img_left)
     cv2.imshow("Right image", img_right)
+    img_sbs = np.concatenate([img_left, img_right], axis=1)
+    cv2.imshow("Side By Side", img_sbs)
     img_left[:,:,1:] = 0
     img_right[:,:,0] = 0
     img_3d = img_left + img_right
