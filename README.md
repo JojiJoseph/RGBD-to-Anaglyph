@@ -11,6 +11,18 @@ python3 rgbd_to_anaglyph.py -i car.jpg -d car.png -opt
 
 ```
 
+## Visualizations supported
+
+Use `--flags` or `-fl` to show different types of 3d representations.
+
+    a - anaglyph (default)
+    s - side by side
+    c - cross eyed 3d
+
+Combine to show mutliple 3d representations
+
+    asc - Show anaglyph, side by side and cross eyed
+
 ## TODO
 
  - [ ] Speed up computation

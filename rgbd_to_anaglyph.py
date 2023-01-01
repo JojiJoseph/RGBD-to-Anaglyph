@@ -66,6 +66,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("-cx","--centre-x",type=float,default=319.5,help="cx")
     arg_parser.add_argument("-cy","--centre-y",type=str,default=239.5,help="cy")
     arg_parser.add_argument("-opt","--optimize",default=False,action="store_true", help="Optimize")
+    arg_parser.add_argument("-fl","--flags",default="a", help="Type of 3d visualization. a - anaglyph, s - side by side, c - cross eyed, l - left view, r - right - view. Combine to show more visualizations together. For example asc - show anaglyph, side by side and cross eyed")
 
     args = arg_parser.parse_args()
     if not args.input_image or not args.depth_image:
@@ -84,6 +85,7 @@ if __name__ == "__main__":
     cx = args.centre_x
     cy = args.centre_y
     distance_between_eyes = args.distance_between_eyes
+    flags = args.flags
 
     Params = namedtuple("Params", ["f","cx","cy","distance_between_eyes"])
     params = Params(f, cx, cy, distance_between_eyes)
@@ -98,14 +100,21 @@ if __name__ == "__main__":
     img_right = np.clip(img_right, 0, 255).astype(np.uint8)
     img_right = cv2.medianBlur(img_right,3)
     img_left = img_left.copy()
-    cv2.imshow("Left image", img_left)
-    cv2.imshow("Right image", img_right)
     img_sbs = np.concatenate([img_left, img_right], axis=1)
-    cv2.imshow("Side By Side", img_sbs)
+    if "l" in flags:
+        cv2.imshow("Left image", img_left)
+    if "r" in flags:
+        cv2.imshow("Right image", img_right)
+    if "s" in flags:
+        cv2.imshow("Side By Side", img_sbs)
+    if "c" in flags:
+        cv2.namedWindow("Cross Eyed", cv2.WINDOW_NORMAL)
+        img_cross = np.concatenate([img_right, img_left], axis=1)
+        cv2.imshow("Cross Eyed",img_cross[:,:,::-1])
     img_left[:,:,1:] = 0
     img_right[:,:,0] = 0
     img_3d = img_left + img_right
-
-    cv2.namedWindow("3d", cv2.WINDOW_NORMAL)
-    cv2.imshow("3d",img_3d[:,:,::-1])
+    if "a" in flags:
+        cv2.namedWindow("3d", cv2.WINDOW_NORMAL)
+        cv2.imshow("3d",img_3d[:,:,::-1])
     cv2.waitKey()
