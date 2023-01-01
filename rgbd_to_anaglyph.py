@@ -35,6 +35,7 @@ def construct_right_image(img_left, depth_image, params):
     return img_right
 
 def optimize(img):
+    height, width, _ = img.shape
     for x in tqdm(range(width)):
         for y in range(height):
             if (img[y, x,:] != [-1, -1, -1]).all():
