@@ -102,11 +102,11 @@ if __name__ == "__main__":
     img_left = img_left.copy()
     img_sbs = np.concatenate([img_left, img_right], axis=1)
     if "l" in flags:
-        cv2.imshow("Left image", img_left)
+        cv2.imshow("Left image", img_left[:,:,::-1])
     if "r" in flags:
-        cv2.imshow("Right image", img_right)
+        cv2.imshow("Right image", img_right[:,:,::-1])
     if "s" in flags:
-        cv2.imshow("Side By Side", img_sbs)
+        cv2.imshow("Side By Side", img_sbs[:,:,::-1])
     if "c" in flags:
         cv2.namedWindow("Cross Eye", cv2.WINDOW_NORMAL)
         img_cross = np.concatenate([img_right, img_left], axis=1)
