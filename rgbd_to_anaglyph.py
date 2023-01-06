@@ -16,6 +16,7 @@ def deproj(x, y, Z, params):
 
 def construct_right_image(img_left, depth_image, params):
     height, width = depth_image.shape
+    mask = 255*np.ones((height, width)).astype(np.uint8)
     img_right = np.ones((height, width, 3),np.uint8) *-1
     for y in tqdm(range(height)):
         for x in range(width):
@@ -32,10 +33,15 @@ def construct_right_image(img_left, depth_image, params):
                 x_ = round(x_)
                 y_ = round(y_)
                 img_right[y_, x_] = img_left[y,x]
-    return img_right
+                mask[y_,x_] = 0
+    return img_right, mask
 
-def optimize(img):
+def optimize(img, mask=None, method="nearest"):
     height, width, _ = img.shape
+    if mask is not None:
+        img = np.clip(img, 0, 255).astype(np.uint8)
+        img = cv2.inpaint(img, mask, 3, cv2.INPAINT_TELEA)
+        return img
     for x in tqdm(range(width)):
         for y in range(height):
             if (img[y, x,:] != [-1, -1, -1]).all():
@@ -44,17 +50,28 @@ def optimize(img):
             visited.add((x,y))
             q = deque()
             q.append([x,y])
+            good_samples = []
+            flag = False
             while q:
-                x_, y_ = q.popleft()
-                for i, j in [(0,1),(0,-1),(1,0),(-1,0),(-1,1),(1,-1),(1,1),(-1,-1)]:
-                    if 0 <= x_+i < width and 0 <= y_+j < height and (x_+i,y_+j) not in visited:
-                        if (img[y_+j,x_+i] != [-1,-1,-1]).all():
-                            img[y, x] = img[y_+j,x_+i]
-                            q.clear()
-                            break
-                        elif (x_+i,y_+j) not in visited:
-                            visited.add((x_+i,y_+j))
-                            q.append([y_+j,x_+i])
+                for _ in range(len(q)):
+                    if not q:
+                        break
+                    x_, y_ = q.popleft()
+                    for i, j in [(0,1),(0,-1),(1,0),(-1,0),(-1,1),(1,-1),(1,1),(-1,-1)]:
+                        if 0 <= x_+i < width and 0 <= y_+j < height and (x_+i,y_+j) not in visited:
+                            if (img[y_+j,x_+i] != [-1,-1,-1]).all():
+                                if method == "nearest":
+                                    img[y, x] = img[y_+j,x_+i]
+                                    q.clear()
+                                    break
+                                good_samples.append(img[y_+j,x_+i])
+                                flag = True
+                            elif (x_+i,y_+j) not in visited:
+                                visited.add((x_+i,y_+j))
+                                q.append([y_+j,x_+i])
+                if flag:
+                    img[y, x] = np.mean(good_samples, axis=0)
+                    break
     return img
 
 if __name__ == "__main__":
@@ -91,12 +108,13 @@ if __name__ == "__main__":
     params = Params(f, cx, cy, distance_between_eyes)
 
     print("Generating right eye view...")
-    img_right = construct_right_image(img_left, img_depth, params)
+    img_right, mask = construct_right_image(img_left, img_depth, params)
 
 
-    print("Optimizing right eye view...")
     if args.optimize:
-        img_right = optimize(img_right)
+        print("Optimizing right eye view...")
+        # img_right = optimize(img_right, mask) To use inpainting
+        img_right = optimize(img_right, None)
     img_right = np.clip(img_right, 0, 255).astype(np.uint8)
     img_right = cv2.medianBlur(img_right,3)
     img_left = img_left.copy()
