@@ -22,6 +22,8 @@ def construct_right_image(img_left, depth_image, params):
         for x in range(width):
             Z = img_depth[y, x]
             if Z == 0:
+                img_right[y, x] = img_left[y,x]
+                mask[y,x] = 0
                 continue
             X, Y, Z = deproj(x, y, Z, params)
             X_ = X-params.distance_between_eyes
@@ -36,7 +38,7 @@ def construct_right_image(img_left, depth_image, params):
                 mask[y_,x_] = 0
     return img_right, mask
 
-def optimize(img, mask=None, method="nearest"):
+def optimize(img, mask=None, method="avg"):
     height, width, _ = img.shape
     if mask is not None:
         img = np.clip(img, 0, 255).astype(np.uint8)
