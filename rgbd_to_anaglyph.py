@@ -83,28 +83,35 @@ if __name__ == "__main__":
     arg_parser.add_argument("-D","--distance-between-eyes",type=float,default=0.05,help="Distance between eyes in m")
     arg_parser.add_argument("-f","--focal-length",type=float,default=525,help="Focal length in pixels")
     arg_parser.add_argument("-cx","--centre-x",type=float,default=319.5,help="cx")
-    arg_parser.add_argument("-cy","--centre-y",type=str,default=239.5,help="cy")
+    arg_parser.add_argument("-cy","--centre-y",type=float,default=239.5,help="cy")
     arg_parser.add_argument("-opt","--optimize",default=False,action="store_true", help="Optimize")
     arg_parser.add_argument("-fl","--flags",default="a", help="Type of 3d visualization. a - anaglyph, s - side by side, c - cross eye, l - left view, r - right - view. Combine to show more visualizations together. For example asc - show anaglyph, side by side and cross eye")
+    arg_parser.add_argument("-nf","--normalization-factor",type=float,default=1000,help="Normalization factor for depth. The raw depth value is divided by this number to convert depth to meters.")
+    arg_parser.add_argument("-of","--output-file", type=str, help="Output file name")
+    arg_parser.add_argument("-ov","--output-view",help="Type of view to be saved. Should be one of 'a', 'c', 's'.")
 
     args = arg_parser.parse_args()
     if not args.input_image or not args.depth_image:
         print("Please give input rgb image and depth image")
         exit()
 
-    img_left = Image.open(args.input_image)
-    img_left = np.asarray(img_left)
-
-    img_depth = Image.open(args.depth_image)
-    img_depth = np.asarray(img_depth) / 1000. # Normalize to meters
-
-    height, width = img_depth.shape
-
     f = args.focal_length
     cx = args.centre_x
     cy = args.centre_y
     distance_between_eyes = args.distance_between_eyes
     flags = args.flags
+    normalization_factor = args.normalization_factor
+    output_view = args.output_view
+    output_file = args.output_file
+
+    img_left = Image.open(args.input_image)
+    img_left = np.asarray(img_left)
+
+    img_depth = Image.open(args.depth_image)
+    img_depth = np.asarray(img_depth) / normalization_factor # Normalize to meters
+
+    height, width = img_depth.shape
+
 
     Params = namedtuple("Params", ["f","cx","cy","distance_between_eyes"])
     params = Params(f, cx, cy, distance_between_eyes)
@@ -121,6 +128,7 @@ if __name__ == "__main__":
     img_right = cv2.medianBlur(img_right,3)
     img_left = img_left.copy()
     img_sbs = np.concatenate([img_left, img_right], axis=1)
+    img_cross = np.concatenate([img_right, img_left], axis=1)
     if "l" in flags:
         cv2.imshow("Left image", img_left[:,:,::-1])
     if "r" in flags:
@@ -129,12 +137,22 @@ if __name__ == "__main__":
         cv2.imshow("Side By Side", img_sbs[:,:,::-1])
     if "c" in flags:
         cv2.namedWindow("Cross Eye", cv2.WINDOW_NORMAL)
-        img_cross = np.concatenate([img_right, img_left], axis=1)
         cv2.imshow("Cross Eye",img_cross[:,:,::-1])
     img_left[:,:,1:] = 0
     img_right[:,:,0] = 0
     img_3d = img_left + img_right
     if "a" in flags:
-        cv2.namedWindow("3d", cv2.WINDOW_NORMAL)
-        cv2.imshow("3d",img_3d[:,:,::-1])
+        cv2.namedWindow("Anaglyph 3d", cv2.WINDOW_NORMAL)
+        cv2.imshow("Anaglyph 3d",img_3d[:,:,::-1])
     cv2.waitKey()
+    if output_file is not None:
+        if output_view not in ["a", "s", "c", "l", "r"]:
+            print("Please specify a valid output view!")
+            exit()
+        if output_view == "a":
+            cv2.imwrite(output_file, img_3d[:,:,::-1])
+        if output_view == "s":
+            cv2.imwrite(output_file, img_sbs[:,:,::-1])
+        if output_view == "c":
+            cv2.imwrite(output_file, img_cross[:,:,::-1])
+
