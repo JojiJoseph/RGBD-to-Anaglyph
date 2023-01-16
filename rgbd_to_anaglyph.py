@@ -31,7 +31,7 @@ def construct_right_image(img_left, depth_image, params):
             y_ = params.f*Y + params.cy*Z
             x_ /= Z
             y_ /= Z
-            if round(x_) < width and round(y_) < height:
+            if 0 <= round(x_) < width and 0 <= round(y_) < height:
                 x_ = round(x_)
                 y_ = round(y_)
                 img_right[y_, x_] = img_left[y,x]
