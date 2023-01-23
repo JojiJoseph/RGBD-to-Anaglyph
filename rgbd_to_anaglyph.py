@@ -16,8 +16,8 @@ def deproj(x, y, Z, params):
 
 def construct_right_image(img_left, depth_image, params):
     height, width = depth_image.shape
-    mask = 255*np.ones((height, width)).astype(np.uint8)
-    img_right = np.ones((height, width, 3),np.uint8) *-1
+    mask = 255*np.ones((height,width)).astype(np.uint8)
+    img_right = np.ones((img_left.shape),np.uint8) *-1
     for y in tqdm(range(height)):
         for x in range(width):
             Z = img_depth[y, x]
@@ -106,6 +106,8 @@ if __name__ == "__main__":
 
     img_left = Image.open(args.input_image)
     img_left = np.asarray(img_left)
+    if len(img_left.shape) == 2:
+        img_left = cv2.merge([img_left, img_left, img_left])
 
     img_depth = Image.open(args.depth_image)
     img_depth = np.asarray(img_depth) / normalization_factor # Normalize to meters
