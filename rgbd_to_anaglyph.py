@@ -5,13 +5,39 @@ import matplotlib.pyplot as plt
 import argparse
 from tqdm import tqdm
 from collections import deque, namedtuple
+import time
 
 def deproj(x, y, Z, params):
-    # f, cx, cy, _ = params
     X = (x-params.cx)*Z/params.f
     Y = (y-params.cy)*Z/params.f
     Z = Z
     return X, Y, Z
+
+def construct_right_image_vectorized(img_left, depth_image, params):
+    height, width = depth_image.shape
+    mask = 255*np.ones((height,width)).astype(np.uint8)
+    img_right = np.ones((img_left.shape),np.uint8) *-1
+    x = np.arange(width)
+    y = np.arange(height)
+    X_left, Y_left = np.meshgrid(x, y)
+    Z = depth_image
+    X, Y, Z = deproj(X_left, Y_left, Z, params)
+    X_ = X-params.distance_between_eyes
+    x_ = params.f*X_ + params.cx*Z
+    y_ = params.f*Y + params.cy*Z
+    Z[Z==0] = -1
+    x_ /= Z
+    y_ /= Z
+    x_[Z==-1] = X_left[Z==-1]
+    y_[Z==-1] = Y_left[Z==-1]
+    x_ = np.round(x_).astype(np.int32)
+    y_ = np.round(y_).astype(np.int32)
+    valid = (0 <= x_) & (x_ < width) & (0 <= y_) & (y_ < height)
+    X = X.astype(np.int32)
+    Y = Y.astype(np.int32)
+    img_right[y_[valid], x_[valid]] = img_left[Y_left[valid], X_left[valid]]
+    mask[y_[valid], x_[valid]] = 0
+    return img_right, mask
 
 
 def construct_right_image(img_left, depth_image, params):
@@ -119,7 +145,10 @@ if __name__ == "__main__":
     params = Params(f, cx, cy, distance_between_eyes)
 
     print("Generating right eye view...")
-    img_right, mask = construct_right_image(img_left, img_depth, params)
+    start_time = time.time()
+    img_right, mask = construct_right_image_vectorized(img_left, img_depth, params)
+    end_time = time.time()
+    print("Time taken to generate right eye view: {} seconds".format(end_time-start_time))
 
 
     if args.optimize:
@@ -157,4 +186,3 @@ if __name__ == "__main__":
             cv2.imwrite(output_file, img_sbs[:,:,::-1])
         if output_view == "c":
             cv2.imwrite(output_file, img_cross[:,:,::-1])
-
