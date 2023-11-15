@@ -70,7 +70,7 @@ optional arguments:
 ```
 ## TODO
 
- - [ ] Speed up computation
+ - [x] Speed up computation (60 times improvement is noticed)
  - [ ] Document functions
 
 ## Acknowledgement
