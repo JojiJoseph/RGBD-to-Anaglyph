@@ -13,65 +13,35 @@
 using namespace std;
 
 struct Params {
-    float f;
-    float cx;
-    float cy;
-    float distance_between_eyes;
+    double f;
+    double cx;
+    double cy;
+    double distance_between_eyes;
 };
 
 vector<double> deproj(double x, double y, double Z, Params params) {
     double X = (x-params.cx)*Z/params.f;
     double Y = (y-params.cy)*Z/params.f;
-    // cout << "X: " << X << " Y: " << Y << " Z: " << Z << endl;
-    // cout << "params.distance_between_eyes: " << params.distance_between_eyes << endl;
-    //float Z = Z;
     return {X, Y, (double)Z};
 }
 
-
-
-// def construct_right_image_vectorized(img_left, depth_image, params):
-//     height, width = depth_image.shape
-//     mask = 255*np.ones((height,width)).astype(np.uint8)
-//     img_right = np.ones((img_left.shape),np.uint8) *-1
-//     x = np.arange(width)
-//     y = np.arange(height)
-//     X_left, Y_left = np.meshgrid(x, y)
-//     Z = depth_image
-//     X, Y, Z = deproj(X_left, Y_left, Z, params)
-//     X_ = X-params.distance_between_eyes
-//     x_ = params.f*X_ + params.cx*Z
-//     y_ = params.f*Y + params.cy*Z
-//     Z[Z==0] = -1
-//     x_ /= Z
-//     y_ /= Z
-//     x_[Z==-1] = X_left[Z==-1]
-//     y_[Z==-1] = Y_left[Z==-1]
-//     x_ = np.round(x_).astype(np.int32)
-//     y_ = np.round(y_).astype(np.int32)
-//     valid = (0 <= x_) & (x_ < width) & (0 <= y_) & (y_ < height)
-//     X = X.astype(np.int32)
-//     Y = Y.astype(np.int32)
-//     img_right[y_[valid], x_[valid]] = img_left[Y_left[valid], X_left[valid]]
-//     mask[y_[valid], x_[valid]] = 0
-//     return img_right, mask
 
 pair<cv::Mat, cv::Mat> construct_right_image(cv::Mat img_left, cv::Mat depth_image, Params params) {
     int height = depth_image.rows;
     int width = depth_image.cols;
     cv::Mat mask = cv::Mat::ones(height, width, CV_8UC1) * 255;
 
-    cv::Mat img_right = cv::Mat::ones(img_left.size(), CV_8UC3);
+    cv::Mat img_right = cv::Mat::zeros(img_left.size(), CV_8UC3);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x ++) {
-            double Z = depth_image.at<int>(y, x) / 1000.; // Convert to meters
+            double Z = depth_image.at<uint16_t>(y, x) / 1000.0; // Convert to meters
 
-            // cout << "Z: " << Z << endl;
             if (Z == 0) {
                 img_right.at<int>(y, x) = img_left.at<int>(y, x);
                 mask.at<int>(y, x) = 0;
                 continue;
             }
+            cout << "Z: " << Z <<" " << depth_image.at<short>(y, x) << endl;
             vector<double> deprojected = deproj(x, y, Z, params);
             double X = deprojected[0];
             double Y = deprojected[1];
@@ -88,9 +58,17 @@ pair<cv::Mat, cv::Mat> construct_right_image(cv::Mat img_left, cv::Mat depth_ima
                 // cout << "x: " << x << " y: " << y << endl;
                 img_right.at<int>(y__, x__) = img_left.at<int>(y, x);
                 mask.at<int>(y__, x__) = 0;
+                cout << x_ << " " <<x<< endl;
             }
         }
     }
+    // Print mask shape
+    cout << "Mask shape: " << mask.size() << endl;
+    cv::imshow("Mask", mask);
+
+    cv::imshow("Left image", img_left);
+    cv::imshow("Right image", img_right);
+    cv::waitKey(0);
     return {img_right, mask};
 }
 
