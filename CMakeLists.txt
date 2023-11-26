@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project( RGBD_to_Anaglyph )
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( main.o rgbd_to_anaglyph_wip.cpp )
+target_link_libraries( main.o ${OpenCV_LIBS} )
